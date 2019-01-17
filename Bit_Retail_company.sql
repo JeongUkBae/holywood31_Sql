@@ -1,8 +1,5 @@
 select * from tab;
-drop table member;
-drop table admin;
-drop table account;
-drop table article;
+
 --***** select tab
 select * from tab;
 

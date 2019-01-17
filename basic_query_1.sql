@@ -7,6 +7,26 @@ SELECT * FROM TAB;
 --[ job_id = 업무코드 ] [ salary = 급여]
 --[ commission_pct = 커미션비율 ] [ manager_id = 상사아이디]
 --[ department_id = 부서코드]
+DESC EMPLOYEESDEPARTMENT_ID;
+
+CREATE VIEW EMP AS
+SELECT EMPLOYEE_ID EID,
+       FIRST_NAME FNAME, 
+       LAST_NAME LNAME ,
+       EMAIL EMAIL,
+       PHONE_NUMBER PHONE,
+       HIRE_DATE HEATE,
+       JOB_ID JID,
+       SALARY SAL,
+       COMMISSION_PCT COMM,
+       MANAGER_ID MID,
+       DEPARTMENT_ID DID
+       FROM EMPLOYEES;
+
+SELECT * FROM EMP;
+SELECT * FROM EMP_DETAILS_VIEW;
+DROP VIEW EMP;
+
 
 -- *******
 -- 문제001. 
