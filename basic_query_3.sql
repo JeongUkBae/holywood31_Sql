@@ -80,7 +80,7 @@ FROM JOB_HISTORY;
 
 select E.FNAME 이름, E.HDATE 입사일,  J.TITLE 업무명
 from JOB J
-    inner join EMP E 
+    join EMP E 
     on J.JID like E.JID 
 where J.TITLE IN('Programmer','Sales Man')
 order by E.FNAME ;
