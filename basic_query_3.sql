@@ -41,6 +41,7 @@ SELECT * FROM EMP;
 SELECT * FROM EMP_DETAILS_VIEW;
 DROP VIEW EMP;
 
+SELECT * FROM TAB;
 DESC DEPARTMENTS;
 CREATE VIEW DEP AS
 SELECT 
@@ -219,7 +220,12 @@ SELECT * FROM TAB;
 -- 출력하세요.
 -- 단, 연봉 = 급여 * 12 입니다
 -- *********************
-
+SELECT
+ EID 사번,
+ FNAME||' '||LNAME 이름,
+ SAL 올해급여,
+ (SAL*12 + (SAL*12)*0.1) /12 내년급여
+FROM EMP;
 
 
 -- *******************
@@ -227,7 +233,22 @@ SELECT * FROM TAB;
 -- 부서별로 담당하는 관리자와 업무를 
 -- 한번씩만 출력하시오 (20행)
 -- *********************
-
+SELECT * FROM EMP;
+SELECT * FROM DEP;
+SELECT * FROM JOB;
+ 
+SELECT
+    DISTINCT D.DNAME 부서,
+    E.FNAME 관리자,
+    J.TITLE 업무
+FROM EMP E
+    JOIN DEP D
+        ON E.EID LIKE D.MID
+    JOIN JOB J
+        ON E.JID LIKE J.JID
+   ;
+ 
+SELECT * FROM DEP;
 
 -- *******************
 -- [문제030]
@@ -239,3 +260,18 @@ SELECT * FROM TAB;
 -- 급여, 내년 순으로 출력하시오
 -- 급액은 천원단위임
 -- *********************
+
+SELECT
+    E.EID 사번,
+    E.FNAME||' '||E.LNAME 이름,    
+    TO_CHAR(ROUND(E.SAL+(E.SAL * (12.3/100))),
+        'l9,999,999'
+        ) "인상된 급여"
+FROM EMP E
+WHERE E.DID LIKE (
+                SELECT D.DID
+                FROM DEP D
+                WHERE D.DNAME LIKE 'IT'
+                )
+;
+
