@@ -282,6 +282,20 @@ FROM STADIUM S ;
 -- SOCCER_SQL_016
 -- 평균키가 인천 유나이티스팀의 평균키 보다 작은 팀의 
 -- 팀ID, 팀명, 평균키 추출
+SELECT * FROM PLAYER;
+
+SELECT AVG(P.HEIGHT)
+FROM PLAYER P ;
+
+SELECT TEAM_ID, AVG(P.HEIGHT)
+FROM PLAYER P
+GROUP BY P.TEAM_ID;
+
+
+SELECT P.HEIGHT 
+FROM PLAYER P
+GROUP BY P.HEIGHT
+ORDER BY P.HEIGHT;
 
 SELECT * FROM PLAYER;
 SELECT * FROM TEAM;
@@ -315,17 +329,55 @@ ORDER BY AVG(HEIGHT);
 
 --답 
 SELECT T.TEAM_ID 팀아이디, T.TEAM_NAME 팀명, 
-        TO_CHAR("ROUND(AVG(P.HEIGHT),2)") 평균키
-FROM (SELECT P.TEAM_ID, COUNT(P.TEAM_ID), ROUND(AVG(P.HEIGHT),2)
+        평균키
+FROM (SELECT P.TEAM_ID, ROUND(AVG(P.HEIGHT),0) 평균키
         FROM PLAYER P
         GROUP BY P.TEAM_ID
-        HAVING AVG(P.HEIGHT) < 180.51
-        ORDER BY AVG(P.HEIGHT)) P
+        HAVING AVG(P.HEIGHT) < (SELECT AVG(P2.HEIGHT)
+                                FROM PLAYER P2
+                                WHERE P2.TEAM_ID LIKE 'K04'
+                                )
+        ) P
        JOIN TEAM T
        ON P.TEAM_ID LIKE T.TEAM_ID
-ORDER BY TO_CHAR("ROUND(AVG(P.HEIGHT),2)");
+ORDER BY 평균키;
+--ORDER BY ;
 
+--1단계 
+SELECT P.TEAM_ID 팀ID,
+       T.TEAM_NAME 팀명,
+       AVG(P.HEIGHT) 평균키
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+GROUP BY P.TEAM_ID, T.TEAM_NAME
+ORDER BY 평균키;
 
+--2단계
+SELECT P.TEAM_ID 팀ID,
+       T.TEAM_NAME 팀명,
+       AVG(P.HEIGHT) 평균키
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+GROUP BY P.TEAM_ID, T.TEAM_NAME
+HAVING AVG(P.HEIGHT) < 180
+ORDER BY 평균키;
+
+--3단계
+SELECT P.TEAM_ID 팀ID,
+       T.TEAM_NAME 팀명,
+       ROUND(AVG(P.HEIGHT),0) 평균키
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+GROUP BY P.TEAM_ID, T.TEAM_NAME
+HAVING AVG(P.HEIGHT) < (SELECT AVG(P.HEIGHT)
+                        FROM TEAM T
+                            JOIN PLAYER P
+                                 ON T.TEAM_ID LIKE P.TEAM_ID
+                        WHERE T.TEAM_NAME LIKE '유나이티드')
+ORDER BY 평균키;
 
 -- SOCCER_SQL_017
 -- 포지션이 MF 인 선수들의  소속팀명 및 선수명, 백넘버 출력
@@ -344,6 +396,7 @@ ORDER BY P.PLAYER_NAME;
 -- 가장 키큰 선수 5 추출, 오라클, 단 키 값이 없으면 제외
 
 SELECT * FROM PLAYER;
+
 SELECT HEIGHT
 FROM PLAYER
 WHERE HEIGHT IS NOT NULL
@@ -355,23 +408,155 @@ FROM (
        FROM PLAYER
        WHERE HEIGHT IS NOT NULL
        ORDER BY HEIGHT DESC )
-WHERE ROWNUM <= 5;       
-
-SELECT PLAYER_NAME 선수명, BACK_NO 백넘버, POSITION 포지션, 
-       (SELECT HEIGHT 
-       FROM PLAYER P
-       WHERE P.HEIGHT IS NOT NULL
-       ORDER BY P.HEIGHT DESC ) 키
-FROM PLAYER P;
---WHERE ROWNUM P.HEIGHT <= 5;       
+WHERE ROWNUM BETWEEN 1 AND 5;     
+     
 
 -- SOCCER_SQL_019
 -- 선수 자신이 속한 팀의 평균키보다 작은 선수 정보 출력
+SELECT * 
+FROM PLAYER 
+;
 
 
+SELECT P.TEAM_ID
+FROM PLAYER P
+GROUP BY P.TEAM_ID
+HAVING AVG(P.HEIGHT) < 180
+;
 
+SELECT T.TEAM_ID, ROUND(AVG(T.HEIGHT),0) 평균
+FROM PLAYER T
+GROUP BY T.TEAM_ID
+ ;
+
+SELECT *
+FROM PLAYER P
+WHERE P.HEIGHT > ( 
+                   SELECT AVG(T.HEIGHT) 평균
+                    FROM PLAYER T
+                    GROUP BY T.TEAM_ID
+                   
+                    )
+                    ;
+
+
+SELECT *
+FROM 
+      (
+      SELECT P.TEAM_ID
+      FROM PLAYER P
+      GROUP BY P.TEAM_ID
+      HAVING AVG(P.HEIGHT) > P.HEIGHT 
+      ORDER BY AVG(P.HEIGHT))T
+;
+
+SELECT L.TEAM_ID, ROUND(AVG(L.HEIGHT),0) 평균
+        FROM PLAYER L
+        GROUP BY L.TEAM_ID 
+        ORDER BY AVG(L.HEIGHT);
+
+SELECT P.TEAM_ID, 평균, T.TEAM_ID 팀아이디
+FROM TEAM T
+    JOIN ( SELECT P.TEAM_ID, ROUND(AVG(P.HEIGHT),0) 평균
+        FROM PLAYER P
+        GROUP BY P.TEAM_ID 
+        ORDER BY AVG(P.HEIGHT)) P
+    ON P.TEAM_ID LIKE T.TEAM_ID
+
+ ;
+
+--틀린 내답** 
+SELECT ( SELECT TEAM_NAME
+        FROM TEAM
+        WHERE TEAM_ID LIKE P.TEAM_ID) 팀명,
+       P.PLAYER_NAME 선수명, P.POSITION 포지션,
+       P.BACK_NO 백넘버, P.HEIGHT, 평균
+       
+FROM PLAYER P
+     JOIN (SELECT L.TEAM_ID, ROUND(AVG(L.HEIGHT),0) 평균
+            FROM PLAYER L
+            GROUP BY L.TEAM_ID 
+            ORDER BY AVG(L.HEIGHT))T
+      ON P.TEAM_ID LIKE T.TEAM_ID
+     
+WHERE P.HEIGHT < T."평균"
+ORDER BY P.PLAYER_NAME ;
+
+--** 최종답 !! 
+SELECT ( SELECT TEAM_NAME
+        FROM TEAM
+        WHERE TEAM_ID LIKE P.TEAM_ID) 팀명,
+       P.PLAYER_NAME 선수명, P.POSITION 포지션,
+       P.BACK_NO 백넘버, P.HEIGHT
+FROM PLAYER P
+    JOIN TEAM T
+        ON P.TEAM_ID LIKE T.TEAM_ID
+WHERE P.HEIGHT < (SELECT AVG(P2.HEIGHT)
+                   FROM PLAYER P2
+                   WHERE P2.TEAM_ID LIKE P.TEAM_ID)
+ORDER BY P.PLAYER_NAME;
+ 
+ 
 -- SOCCER_SQL_020
 -- 2012년 5월 한달간 경기가 있는 경기장 조회
 -- EXISTS 쿼리는 항상 연관쿼리로 상요한다.
 -- 또한 아무리 조건을 만족하는 건이 여러 건이라도
 -- 조건을 만족하는 1건만 찾으면 추가적인 검색을 진행하지 않는다
+
+SELECT * FROM SCHEDULE;
+
+SELECT S.STADIUM_ID ID, S.STADIUM_NAME 경기장명
+FROM STADIUM S 
+WHERE EXISTS (
+              SELECT 1
+              FROM SCHEDULE C
+              WHERE S.STADIUM_ID LIKE C.STADIUM_ID 
+              AND C.SCHE_DATE BETWEEN '20120501' AND '20120530'
+             
+              --AND C.SCHE_DATE IN('20120501', '20120530') 
+                )
+ ORDER BY S.STADIUM_NAME;
+ 
+ -- SOCCER_SQL_021
+-- 이현 선수 소속팀의 선수명단 출력
+
+
+
+-- SOCCER_SQL_022
+-- NULL 처리에 있어
+-- SUM(NVL(SAL,0)) 로 하지말고
+-- NVL(SUM(SAL),0) 으로 해야 자원낭비가 줄어든다
+-- 팀별 포지션별 인원수와 팀별 전체 인원수 출력
+-- Oracle, Simple Case Expr 
+
+
+
+-- SOCCER_SQL_023
+-- GROUP BY 절 없이 전체 선수들의 포지션별 평균 키 및 전체 평균 키 출력
+
+
+-- SOCCER_SQL_024 
+-- 소속팀별 키가 가장 작은 사람들의 정보
+
+
+-- SOCCER_SQL_025 
+-- K-리그 2012년 8월 경기결과와 두 팀간의 점수차를 ABS 함수를 사용하여
+-- 절대값으로 출력하기
+
+
+-- SOCCER_SQL_026 
+-- 20120501 부터 20120602 사이에 경기가 있는 경기장 조회
+
+-- SOCCER_SQL_027 
+-- 선수정보와 해당 선수가 속한  팀의 평균키 조회
+-- 단, 정렬시 평균키 내림차순
+
+-- SOCCER_SQL_028 
+-- 평균키가 삼성 블루윙즈 팀이 평균키보다 작은 팀의 
+-- 이름과 해당 팀의 평균키
+
+-- SOCCER_SQL_029 
+-- 드래곤즈,FC서울,일화천마 각각의 팀 소속의 GK, MF 선수 정보
+
+-- SOCCER_SQL_030 
+-- 29번에서 제시한 팀과 포지션이 아닌 선수들의 수
